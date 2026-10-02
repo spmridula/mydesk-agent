@@ -1,0 +1,11 @@
+langgraph>=1.0,<2
+langchain-core>=1.0,<2
+langchain-ollama>=1.0,<2
+langchain-chroma>=1.0,<2
+langchain-text-splitters>=1.0,<2
+mcp>=1.27,<2
+fastapi>=0.110
+uvicorn>=0.29
+python-dotenv>=1.0
+pypdf>=5.0
+boto3>=1.34

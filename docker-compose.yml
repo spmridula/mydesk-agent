@@ -1,0 +1,25 @@
+services:
+  ollama:
+    image: ollama/ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    # No port published, so it won't clash with Ollama installed on your machine.
+    # (Add a GPU reservation here if you have an NVIDIA GPU + container toolkit.)
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      LLM_MODEL: llama3.2:3b
+      EMBED_MODEL: nomic-embed-text
+    volumes:
+      - ./data:/app/data
+      - chroma_data:/app/chroma_db
+    depends_on:
+      - ollama
+
+volumes:
+  ollama_data:
+  chroma_data:

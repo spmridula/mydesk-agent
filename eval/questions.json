@@ -1,0 +1,12 @@
+[
+  {"q": "What is the penalty if I submit my assignment 30 hours late?", "intent": "question", "source": "exam_and_assignment_policy.md"},
+  {"q": "How many days of paid annual leave do I get?", "intent": "question", "source": "workplace_leave_and_wfh_policy.md"},
+  {"q": "How do I explain a project using the STAR method?", "intent": "question", "source": "interview_prep_guide.md"},
+  {"q": "My VPN shows error 809, what do I do?", "intent": "question", "source": "it_faq.md"},
+  {"q": "How should I plan the two weeks before my exams?", "intent": "question", "source": "study_techniques.md"},
+  {"q": "What attendance do I need to write the end-sem exam?", "intent": "question", "source": "exam_and_assignment_policy.md"},
+  {"q": "Add a task: submit DBMS assignment by 2026-10-15", "intent": "task", "source": "mcp:add_task"},
+  {"q": "Show me my open tasks", "intent": "task", "source": "mcp:list_tasks"},
+  {"q": "What is due in the next 7 days?", "intent": "task", "source": "mcp:upcoming_deadlines"},
+  {"q": "Hi there!", "intent": "chitchat", "source": null}
+]
