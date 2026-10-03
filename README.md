@@ -72,7 +72,7 @@ Runs 10 questions through the agent and reports intent-routing accuracy, whether
 | Version | Intent accuracy | Source/tool hit rate | Avg latency |
 |---|---|---|---|
 | v1: LLM-only routing, strict grader (`llama3.2:3b`, CPU) | 0.70 | 0.22 | 69 s |
-| v2: rule + LLM routing, lenient grader, `keep_alive` | _fill in after re-running_ | _fill in_ | _fill in_ |
+| v2: rule + LLM routing, lenient grader, keep_alive | 1.00 | 1.00 | 36.5 s |
 
 ## Docker
 
