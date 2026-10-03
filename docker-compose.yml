@@ -16,10 +16,10 @@ services:
       EMBED_MODEL: nomic-embed-text
     volumes:
       - ./data:/app/data
-      - chroma_data:/app/chroma_db
+      - index_data:/app/index
     depends_on:
       - ollama
 
 volumes:
   ollama_data:
-  chroma_data:
+  index_data:

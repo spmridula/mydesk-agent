@@ -1,12 +1,11 @@
-"""Load documents -> chunk -> embed -> store in Chroma.
+"""Load documents -> chunk -> embed -> store in a vector index on disk.
 
 Run:  python -m app.ingest
 """
-import shutil
 from pathlib import Path
 
-from langchain_chroma import Chroma
 from langchain_core.documents import Document
+from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
@@ -63,17 +62,12 @@ def build_index() -> int:
     )
     chunks = splitter.split_documents(docs)
 
-    # Rebuild from scratch so re-running never creates duplicates
-    if config.CHROMA_DIR.exists():
-        shutil.rmtree(config.CHROMA_DIR)
-
+    # Rebuild from scratch every time, so re-running never creates duplicates
     embeddings = OllamaEmbeddings(model=config.EMBED_MODEL, base_url=config.OLLAMA_BASE_URL)
-    store = Chroma(
-        collection_name="mydesk",
-        embedding_function=embeddings,
-        persist_directory=str(config.CHROMA_DIR),
-    )
+    store = InMemoryVectorStore(embeddings)
     store.add_documents(chunks)
+    config.INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
+    store.dump(str(config.INDEX_PATH))  # persist embeddings + text to disk
     print(f"Indexed {len(docs)} document(s) -> {len(chunks)} chunks")
     return len(chunks)
 

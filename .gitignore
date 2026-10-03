@@ -3,7 +3,7 @@ venv/
 __pycache__/
 *.pyc
 .env
-chroma_db/
+index/
 data/tasks.db
 eval/results.json
 .DS_Store

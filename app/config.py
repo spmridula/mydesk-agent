@@ -14,7 +14,7 @@ EMBED_MODEL = os.getenv("EMBED_MODEL", "nomic-embed-text")
 
 # --- Paths ---
 DOCS_DIR = Path(os.getenv("DOCS_DIR", BASE_DIR / "data" / "docs"))
-CHROMA_DIR = Path(os.getenv("CHROMA_DIR", BASE_DIR / "chroma_db"))
+INDEX_PATH = Path(os.getenv("INDEX_PATH", BASE_DIR / "index" / "vectors.json"))
 TASKS_DB = Path(os.getenv("TASKS_DB", BASE_DIR / "data" / "tasks.db"))
 MCP_SERVER_PATH = BASE_DIR / "mcp_server" / "tasks_server.py"
 
