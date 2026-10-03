@@ -1,7 +1,6 @@
 """FastAPI wrapper.  Run:  uvicorn app.api:app --reload   then open http://localhost:8000/docs"""
 import time
-
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from app.graph import run_agent
@@ -23,7 +22,10 @@ def health():
 @app.post("/ask")
 async def ask(req: AskRequest):
     start = time.perf_counter()
-    result = await run_agent(req.question)
+    try:
+        result = await run_agent(req.question)
+    except Exception as exc:  # return a readable error instead of a bare 500
+        raise HTTPException(status_code=500, detail=f"{type(exc).__name__}: {exc}") from exc
     return {
         "answer": result.get("answer"),
         "intent": result.get("intent"),
