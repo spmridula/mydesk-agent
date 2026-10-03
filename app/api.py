@@ -12,7 +12,9 @@ app = FastAPI(title="MyDesk Agent", version="1.0")
 class AskRequest(BaseModel):
     question: str
 
-
+@app.get("/")
+def root():
+    return {"message": "MyDesk Agent is running. Open /docs to try the API."}
 @app.get("/health")
 def health():
     return {"status": "ok"}

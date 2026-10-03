@@ -4,6 +4,6 @@ __pycache__/
 *.pyc
 .env
 index/
-data/tasks.db
+data/*.db
 eval/results.json
 .DS_Store

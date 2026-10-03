@@ -7,7 +7,11 @@ from app.graph import run_agent
 async def main() -> None:
     print("MyDesk Agent (type 'exit' to quit)")
     while True:
-        question = input("\nYou: ").strip()
+        try:
+            question = input("\nYou: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nBye!")
+            break
         if question.lower() in {"exit", "quit"}:
             break
         if not question:

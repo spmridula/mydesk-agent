@@ -5,10 +5,13 @@ NOTE: task questions write to the tasks DB; use a throwaway DB:  TASKS_DB=data/e
 """
 import asyncio
 import json
+import os
 import time
 from pathlib import Path
 
-from app.graph import run_agent
+os.environ.setdefault("TASKS_DB", "data/eval_tasks.db")  # keep eval tasks out of your real task list
+
+from app.graph import run_agent  # noqa: E402
 
 HERE = Path(__file__).parent
 

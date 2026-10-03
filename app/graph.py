@@ -17,6 +17,17 @@ from langgraph.graph import END, START, StateGraph
 from app import config, mcp_client, rag
 
 
+# Rules for the obvious task requests: faster than an LLM call and more reliable on small models.
+TASK_RULES = re.compile(
+    r"(\b(add|create|make|set)\b.{0,25}\b(task|reminder|deadline|todo|to-do)\b"
+    r"|\b(my|open|pending|all)\s+(tasks|todos|to-dos|deadlines)\b"
+    r"|\b(mark|set)\b.{0,40}\b(done|completed?)\b"
+    r"|\bwhat('s| is)\s+due\b|\bdue (this|next|in|today|tomorrow)\b"
+    r"|\bupcoming deadlines?\b|\bremind me\b)",
+    re.IGNORECASE,
+)
+
+
 class AgentState(TypedDict, total=False):
     question: str
     intent: str
@@ -35,6 +46,7 @@ def _llm(json_mode: bool = False) -> ChatOllama:
         base_url=config.OLLAMA_BASE_URL,
         temperature=0,
         format="json" if json_mode else None,
+        keep_alive=config.KEEP_ALIVE,
     )
 
 
@@ -63,21 +75,33 @@ def _log(state: AgentState, msg: str) -> list[str]:
 
 # ---------------------------------------------------------------- nodes
 def classify(state: AgentState) -> AgentState:
-    system = (
-        "Classify the user's message. Reply with JSON: {\"intent\": \"...\"}.\n"
-        "- \"task\": they want to add, list, complete or check tasks, deadlines or reminders.\n"
-        "- \"question\": they ask for information or advice (study, policies, career, IT help).\n"
-        "- \"chitchat\": greetings or small talk."
-    )
-    data = _parse_json(_ask(system, state["question"], json_mode=True))
-    intent = data.get("intent", "question")
-    if intent not in ("task", "question", "chitchat"):
-        intent = "question"
+    # 1) cheap rules for obvious task requests, 2) LLM for everything else
+    if TASK_RULES.search(state["question"]):
+        intent, how = "task", "rule"
+    else:
+        system = (
+            "Classify the user's message into exactly one intent. Reply with JSON: {\"intent\": \"...\"}.\n"
+            "- \"task\": manage the user's own to-do list (add, list, complete tasks, deadlines, reminders).\n"
+            "- \"question\": asks for information, rules, policies, advice or how-to "
+            "(study, college, workplace, career, IT help).\n"
+            "- \"chitchat\": greetings or thanks.\n"
+            "Examples:\n"
+            "\"Add a task to submit my report by Friday\" -> task\n"
+            "\"Show my pending tasks\" -> task\n"
+            "\"How should I plan my exam week?\" -> question\n"
+            "\"How many leave days do I get?\" -> question\n"
+            "\"My VPN is not working\" -> question\n"
+            "\"Thanks!\" -> chitchat"
+        )
+        data = _parse_json(_ask(system, state["question"], json_mode=True))
+        intent, how = data.get("intent", "question"), "llm"
+        if intent not in ("task", "question", "chitchat"):
+            intent = "question"
     return {
         "intent": intent,
         "search_query": state["question"],
         "rewrites": 0,
-        "trace": _log(state, f"classify -> {intent}"),
+        "trace": _log(state, f"classify -> {intent} ({how})"),
     }
 
 
@@ -89,8 +113,9 @@ def retrieve(state: AgentState) -> AgentState:
 def grade(state: AgentState) -> AgentState:
     context = "\n---\n".join(d.page_content for d in state["docs"])
     system = (
-        "You grade retrieval. Does the context contain information that helps answer the question? "
-        "Reply with JSON: {\"relevant\": true} or {\"relevant\": false}."
+        "You grade document retrieval. Be lenient: answer true if the context mentions the topic of "
+        "the question or contains facts that help answer it, even partially. Answer false only if the "
+        "context is clearly about something else. Reply with JSON: {\"relevant\": true} or {\"relevant\": false}."
     )
     data = _parse_json(
         _ask(system, f"Question: {state['question']}\n\nContext:\n{context}", json_mode=True)
@@ -114,21 +139,22 @@ def rewrite(state: AgentState) -> AgentState:
 
 def generate(state: AgentState) -> AgentState:
     docs = state.get("docs", [])
-    if not state.get("relevant") or not docs:
+    if not docs:
         return {
-            "answer": "I couldn't find this in your documents. Try adding a relevant document and re-running ingest.",
+            "answer": "I couldn't find anything in your documents. Add some to data/docs and run: python -m app.ingest",
             "sources": [],
-            "trace": _log(state, "generate -> no relevant context"),
+            "trace": _log(state, "generate -> no documents"),
         }
+    note = "" if state.get("relevant") else " (grader unsure after retries; answering from best chunks)"
     context = "\n\n".join(f"[{d.metadata.get('source')}]\n{d.page_content}" for d in docs)
     system = (
         "You are MyDesk, a helpful assistant for students and working professionals. "
         "Answer ONLY using the context. Be concise. Mention the source file name in brackets "
-        "like [file.md]. If the context is insufficient, say so."
+        "like [file.md]. If the context does not contain the answer, say you could not find it in the documents."
     )
     answer = _ask(system, f"Context:\n{context}\n\nQuestion: {state['question']}")
     sources = list(dict.fromkeys(d.metadata.get("source", "?") for d in docs))  # rank order, deduped
-    return {"answer": answer, "sources": sources, "trace": _log(state, f"generate -> sources {sources}")}
+    return {"answer": answer, "sources": sources, "trace": _log(state, f"generate -> sources {sources}{note}")}
 
 
 def chitchat(state: AgentState) -> AgentState:
