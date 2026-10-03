@@ -122,3 +122,12 @@ For free local testing use LocalStack and set `S3_ENDPOINT_URL=http://localhost:
 
 Hybrid search (BM25 + vectors) and a reranker, human approval before write actions (LangGraph interrupts),
 Langfuse tracing, conversation memory, a Streamlit UI.
+
+## Known limitations
+
+   - The 10-question eval is small and was written by the author; it measures routing and top-source accuracy,
+     not answer correctness.
+   - With `llama3.2:3b` the LLM grader often marks good context as irrelevant, so the corrective-RAG loop adds
+     latency without improving results. A stronger model or a score-based gate is the next experiment.
+   - Latency is CPU-bound (about 10 to 40 s per answer). A GPU or hosted endpoint would fix this.
+   - Docker and S3 loading are provided but have only been exercised in a basic way.
